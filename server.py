@@ -41,7 +41,12 @@ def find_afterparties():
     sort = request.args.get('sort', '')
 
     url = 'https://app.ticketmaster.com/discovery/v2/events'
-    payload = {'apikey': API_KEY}
+    payload = {'apikey': API_KEY,
+        'keyword' : keyword,
+        'postalCode' : postalcode,
+        'radius' : radius,
+        'unit' : unit,
+        'sort' : sort}
 
     # TODO: Make a request to the Event Search endpoint to search for events
     #
@@ -54,9 +59,13 @@ def find_afterparties():
     # - Replace the empty list in `events` with the list of events from your
     #   search results
 
-    data = {'Test': ['This is just some test data'],
-            'page': {'totalElements': 1}}
-    events = []
+    #create a request using the user input to generate a url with parameters. 
+    #the above date should be assigned to data
+
+
+    res = requests.get(url, params=payload)
+    data = res.json()
+    events = data['_embedded']['events']
 
     return render_template('search-results.html',
                            pformat=pformat,
@@ -74,8 +83,31 @@ def get_event_details(id):
     """View the details of an event."""
 
     # TODO: Finish implementing this view function
+    # api url route
+    # payload information
+    #   api key, event id, locale, 
 
-    return render_template('event-details.html')
+    event_id = id
+    url = f'https://app.ticketmaster.com/discovery/v2/events/{id}'
+    payload = {'apikey': API_KEY,
+        'id' : event_id}
+
+    res = requests.get(url, params=payload)
+    data = res.json()
+
+    event_name = data['name']
+    event_image = data['images'][0]['url']
+    event_startdate = data['dates']['start']['localDate']
+    event_venues = data['_embedded']['venues']
+    event_classification = data['classifications']
+
+    for i, genre in enumerate(event_classification):
+        event_genres = list(data['classifications'][i].get('name'))
+
+
+    return render_template('event-details.html', event_name = event_name, event_image = event_image, 
+    event_startdate = event_startdate, event_venues = event_venues, event_genres = event_genres)
+
 
 
 if __name__ == '__main__':
